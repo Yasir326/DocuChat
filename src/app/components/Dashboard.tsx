@@ -1,14 +1,33 @@
 'use client';
 
-import { Ghost, Plus } from 'lucide-react';
+import { Ghost, Loader2, MessageSquare, Plus, Trash } from 'lucide-react';
 import { trpc } from '../_trpc/client';
 import UploadButton from './UploadButton';
 import Skeleton from 'react-loading-skeleton';
 import Link from 'next/link';
-import {format} from 'date-fns'
+import { format } from 'date-fns';
+import { Button } from '@/components/ui/button';
+import { useState } from 'react';
 
 const Dashboard = () => {
+  const [currentlyDeletingFile, setCurrentlyDeletingFile] = useState<
+    string | null
+  >(null);
+
+  const utils = trpc.useUtils();
   const { data: files, isLoading } = trpc.getUserFiles.useQuery();
+
+  const { mutate: deleteFile } = trpc.deleteFile.useMutation({
+    onSuccess: () => {
+      utils.getUserFiles.invalidate();
+    },
+    onMutate({ id }) {
+      setCurrentlyDeletingFile(id);
+    },
+    onSettled() {
+      setCurrentlyDeletingFile(null);
+    },
+  });
 
   return (
     <main className='mx-auto max-w-7xl md:p-10'>
@@ -49,8 +68,26 @@ const Dashboard = () => {
                 <div className='px-6 mt-4 grid grid-cols-3 place-items-center py-2 gap-6 text-xs text-zinc-500'>
                   <div className='flex items-center gap-2'>
                     <Plus className='h-4 w-4' />
-                    {format(new Date(file.createdAt), "MMM dd yyyy")}
+                    {format(new Date(file.createdAt), 'MMM dd yyyy')}
                   </div>
+
+                  <div className='flex items-center gap-2'>
+                    <MessageSquare className='h-4 w-4' />
+                    mocked
+                  </div>
+
+                  <Button
+                    onClick={() => deleteFile({ id: file.id })}
+                    size='sm'
+                    className='w-full'
+                    variant='destructive'
+                  >
+                    {currentlyDeletingFile === file.id ? (
+                      <Loader2 className='h-4 w-4 animate-spin' />
+                    ) : (
+                      <Trash className='h-4 w-4' />
+                    )}
+                  </Button>
                 </div>
               </li>
             ))}
