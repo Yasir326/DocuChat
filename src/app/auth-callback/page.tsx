@@ -17,11 +17,15 @@ const Page = () => {
   });
 
   useEffect(() => {
-    if (data?.success) {
-      // user is synced to db
-      router.push(origin ? `/${origin}` : '/dashboard');
-    } else if (error?.data?.code === 'UNAUTHORIZED') {
-      router.push('/sign-in');
+    try {
+      if (data?.success) {
+        // user is synced to db
+        router.push(origin ? `/${origin}` : '/dashboard');
+      } else if (error?.data?.code === 'UNAUTHORIZED') {
+        router.push('/sign-in');
+      }
+    } catch (e) {
+      console.error("An error", e);
     }
   }, [data, error, origin, router]);
 
