@@ -3,6 +3,8 @@
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogTrigger, DialogContent } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
+import { useToast } from '@/components/ui/use-toast';
+import { useUploadThing } from '@/src/lib/uploadthing';
 import { Cloud, File } from 'lucide-react';
 import { useState } from 'react';
 import Dropzone from 'react-dropzone';
@@ -11,21 +13,25 @@ const UploadZone = () => {
   const [isUploading, setIsUploading] = useState(true);
   const [uploadProgress, setUploadProgress] = useState(0);
 
+  const { toast } = useToast();
+
+  const { startUpload } = useUploadThing('cvUploader');
+
   const startSimulatedProgress = () => {
-    setUploadProgress(0)
+    setUploadProgress(0);
 
     const interval = setInterval(() => {
       setUploadProgress((prevProgress) => {
         if (prevProgress >= 95) {
-          clearInterval(interval)
-          return prevProgress
+          clearInterval(interval);
+          return prevProgress;
         }
-        return prevProgress + 5
-      })
-    }, 500)
+        return prevProgress + 5;
+      });
+    }, 500);
 
-    return interval
-  }
+    return interval;
+  };
 
   return (
     <Dropzone
@@ -34,6 +40,28 @@ const UploadZone = () => {
         setIsUploading(true);
 
         const progressInterval = startSimulatedProgress();
+
+        const res = await startUpload(acceptedFile);
+
+        if (!res) {
+          return toast({
+            title: 'Something went wrong',
+            description: 'PLease try again later',
+            variant: 'destructive',
+          });
+        }
+
+        const [fileResponse] = res;
+
+        const key = fileResponse.key;
+
+        if (!key) {
+          return toast({
+            title: 'Something went wrong',
+            description: 'PLease try again later',
+            variant: 'destructive',
+          });
+        }
 
         clearInterval(progressInterval);
         setUploadProgress(100);
