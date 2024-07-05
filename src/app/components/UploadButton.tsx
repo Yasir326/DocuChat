@@ -8,14 +8,27 @@ import { useUploadThing } from '@/src/lib/uploadthing';
 import { Cloud, File } from 'lucide-react';
 import { useState } from 'react';
 import Dropzone from 'react-dropzone';
+import { trpc } from '../_trpc/client';
+import { useRouter } from 'next/navigation';
 
 const UploadZone = () => {
   const [isUploading, setIsUploading] = useState(true);
   const [uploadProgress, setUploadProgress] = useState(0);
 
+  const router = useRouter();
+
   const { toast } = useToast();
 
   const { startUpload } = useUploadThing('cvUploader');
+
+  const { mutate: startPolling } = trpc.getFile.useMutation({
+    onSuccess: (file) => {
+      router.push(`/dashboard/${file.id}`);
+    },
+
+    retry: true,
+    retryDelay: 500,
+  });
 
   const startSimulatedProgress = () => {
     setUploadProgress(0);
@@ -65,6 +78,8 @@ const UploadZone = () => {
 
         clearInterval(progressInterval);
         setUploadProgress(100);
+
+        startPolling({ key });
       }}
     >
       {({ getRootProps, getInputProps, acceptedFiles }) => (
@@ -105,6 +120,13 @@ const UploadZone = () => {
                   />
                 </div>
               ) : null}
+
+              <input
+                {...getInputProps()}
+                type='file'
+                id='dropzone-file'
+                className='hidden'
+              />
             </label>
           </div>
         </div>
